@@ -1,0 +1,4 @@
+.env
+node_modules/
+dist/
+minecraft-modpack-manager-win32-x64/

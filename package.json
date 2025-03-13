@@ -1,0 +1,44 @@
+{
+  "name": "kek-launcher-reborn",
+  "version": "1.0.0",
+  "description": "A way to manage even the worst of modpacks",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-packager . minecraft-modpack-manager --platform=win32 --arch=x64",
+    "package": "electron-builder"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^25.1.8",
+    "electron-packager": "^15.5.2",
+    "electron-updater": "^6.3.9",
+    "dotenv": "^16.0.0"
+  },
+  "keywords": [
+    "electron",
+    "minecraft",
+    "modpack",
+    "manager"
+  ],
+  "author": "Gojibodev",
+  "license": "MIT",
+  "build": {
+    "appId": "com.gojibodev.keklauncher",
+    "productName": "KEK Launcher Reborn",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Gojibodev",
+        "repo": "keklauncher",
+        "private": true,
+        "token": "${env.GITHUB_TOKEN}"
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "path/to/icon.ico"
+    }
+  }
+}
