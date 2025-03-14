@@ -1,7 +1,10 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { autoUpdater } = require('electron-updater');
+const { autoUpdater, AppUpdater } = require('electron-updater');
 
+
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
 function createWindow() {
     console.log('Creating main window...');
     const mainWindow = new BrowserWindow({

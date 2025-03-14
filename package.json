@@ -1,20 +1,21 @@
 {
   "name": "kek-launcher-reborn",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A way to manage even the worst of modpacks",
   "main": "src/main.js",
-  "scripts": {
-    "start": "electron .",
-    "build": "electron-packager . minecraft-modpack-manager --platform=win32 --arch=x64",
-    "package": "electron-builder"
-  },
+"scripts": {
+  "start": "electron .",
+  "build": "electron-packager . minecraft-modpack-manager --platform=win32 --arch=x64 --overwrite",
+  "package": "cross-env GITHUB_TOKEN=$GITHUB_TOKEN electron-builder"
+},
   "dependencies": {},
   "devDependencies": {
     "electron": "^25.0.0",
     "electron-builder": "^25.1.8",
     "electron-packager": "^15.5.2",
     "electron-updater": "^6.3.9",
-    "dotenv": "^16.0.0"
+    "dotenv": "^16.0.0",
+    "cross-env": "^7.0.3"
   },
   "keywords": [
     "electron",
@@ -24,16 +25,15 @@
   ],
   "author": "Gojibodev",
   "license": "MIT",
+  "repository": "https://github.com/Gojibodev/keklauncher",
   "build": {
     "appId": "com.gojibodev.keklauncher",
     "productName": "KEK Launcher Reborn",
     "publish": [
       {
         "provider": "github",
-        "owner": "Gojibodev",
-        "repo": "keklauncher",
-        "private": true,
-        "token": "${env.GITHUB_TOKEN}"
+        "releaseType": "release",
+        "private": true
       }
     ],
     "win": {

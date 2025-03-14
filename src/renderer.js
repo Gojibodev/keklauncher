@@ -18,15 +18,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const carouselContainer = document.querySelector('.carousel-container');
     const carouselImages = document.querySelectorAll('.carousel-image');
     let currentIndex = 0;
-
     updateButton.addEventListener('click', () => {
         console.log('Update button clicked');
-        statusMessage.textContent = 'Updating modpack...';
-        // Simulate file update process
-        setTimeout(() => {
-            statusMessage.textContent = 'Modpack updated successfully!';
-        }, 2000);
+        statusMessage.textContent = 'Checking for updates...';
+        ipcRenderer.send('check-for-updates');
     });
+    // updateButton.addEventListener('click', () => {
+    //     console.log('Update button clicked');
+    //     statusMessage.textContent = 'Updating modpack...';
+    //     // Simulate file update process
+    //     setTimeout(() => {
+    //         statusMessage.textContent = 'Modpack updated successfully!';
+    //     }, 2000);
+    // });
 
     minimizeButton.addEventListener('click', () => {
         console.log('Minimize button clicked');
