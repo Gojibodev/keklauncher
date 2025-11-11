@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEK Launcher Modpacks</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <header class="header">
+        <div class="container">
+            <h1 class="glitch" data-text="KEK LAUNCHER">KEK LAUNCHER</h1>
+            <p class="tagline">Community-Driven Minecraft Modpacks</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search modpacks...">
+            <select id="versionFilter">
+                <option value="">All Versions</option>
+                <option value="1.20.1">1.20.1</option>
+                <option value="1.19.2">1.19.2</option>
+                <option value="1.18.2">1.18.2</option>
+                <option value="1.16.5">1.16.5</option>
+                <option value="1.12.2">1.12.2</option>
+            </select>
+            <select id="loaderFilter">
+                <option value="">All Loaders</option>
+                <option value="forge">Forge</option>
+                <option value="fabric">Fabric</option>
+                <option value="quilt">Quilt</option>
+            </select>
+        </div>
+
+        <div id="modpacksGrid" class="modpacks-grid">
+            <!-- Modpacks will be loaded here -->
+            <div class="loading">Loading modpacks...</div>
+        </div>
+    </main>
+
+    <!-- Modal for modpack details -->
+    <div id="modpackModal" class="modal">
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Powered by KEK Launcher | <a href="https://github.com/Gojibodev/keklauncher">GitHub</a></p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

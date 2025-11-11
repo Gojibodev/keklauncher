@@ -6,6 +6,7 @@ let currentMetadata = null;
 document.addEventListener('DOMContentLoaded', async () => {
     loadWorkspaces();
     setupEventListeners();
+    setupProtocolHandler();
 });
 
 // Setup event listeners
@@ -37,6 +38,31 @@ function setupEventListeners() {
             }
         });
     }
+}
+
+// Setup protocol handler for deep linking from web
+function setupProtocolHandler() {
+    window.electron.onProtocolInstall((modpackUrl) => {
+        addStatus(`Deep link install triggered: ${modpackUrl}`, 'info');
+
+        // Auto-fill URL import modal
+        document.getElementById('modpackUrl').value = modpackUrl;
+
+        // Show modal
+        showImportURLModal();
+
+        // Auto-start import after a delay (let user confirm)
+        setTimeout(() => {
+            const confirmed = confirm(`Install modpack from:\n${modpackUrl}?`);
+            if (confirmed) {
+                importFromURL();
+            }
+        }, 500);
+    });
+
+    window.electron.onShowNotification((data) => {
+        addStatus(data.message, data.type || 'info');
+    });
 }
 
 // Navigate back to main launcher
@@ -615,11 +641,19 @@ function showPublicModpackModal() {
 async function generatePublicModpack() {
     if (!currentWorkspaceId) return;
 
+    const thumbnailUrl = document.getElementById('thumbnailUrl').value.trim();
+    const bannerUrl = document.getElementById('bannerUrl').value.trim();
+    const galleryUrls = document.getElementById('galleryUrls').value.trim();
     const votingUrl = document.getElementById('votingUrl').value.trim();
     const issuesUrl = document.getElementById('issuesUrl').value.trim();
     const downloadUrl = document.getElementById('downloadUrl').value.trim();
 
     const options = {};
+    if (thumbnailUrl) options.thumbnail = thumbnailUrl;
+    if (bannerUrl) options.banner = bannerUrl;
+    if (galleryUrls) {
+        options.gallery = galleryUrls.split(',').map(url => url.trim()).filter(url => url);
+    }
     if (votingUrl) options.votingUrl = votingUrl;
     if (issuesUrl) options.issuesUrl = issuesUrl;
     if (downloadUrl) options.downloadUrl = downloadUrl;

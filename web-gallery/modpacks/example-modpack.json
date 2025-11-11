@@ -1,0 +1,105 @@
+{
+  "id": "ultimate-tech-pack",
+  "name": "Ultimate Tech Pack",
+  "version": "1.3.0",
+  "minecraftVersion": "1.20.1",
+  "modloader": {
+    "type": "forge",
+    "version": "47.2.0"
+  },
+  "author": "YourName",
+  "description": "A comprehensive technology-focused modpack featuring Create, Mekanism, and Applied Energistics. Build massive factories, automate everything, and explore advanced tech trees. Perfect for players who love engineering and automation!",
+  "requiredRam": "6G",
+  "javaVersion": "17",
+  "createdAt": "2025-01-15T10:00:00Z",
+  "updatedAt": "2025-01-20T15:30:00Z",
+  "images": {
+    "thumbnail": "https://i.imgur.com/example-thumb.png",
+    "banner": "https://i.imgur.com/example-banner.png",
+    "gallery": [
+      "https://i.imgur.com/screenshot1.png",
+      "https://i.imgur.com/screenshot2.png",
+      "https://i.imgur.com/screenshot3.png",
+      "https://i.imgur.com/screenshot4.png"
+    ]
+  },
+  "mods": [
+    {
+      "filename": "create-1.20.1-0.5.1.jar",
+      "url": "https://example.com/mods/create-1.20.1-0.5.1.jar",
+      "curseForgeId": 328085,
+      "hash": "abc123def456",
+      "version": "0.5.1",
+      "required": true
+    },
+    {
+      "filename": "jei-1.20.1-15.2.0.27.jar",
+      "curseForgeId": 238222,
+      "hash": "def789ghi012",
+      "version": "15.2.0.27",
+      "required": true
+    }
+  ],
+  "folders": {
+    "essential": ["mods", "config"],
+    "optional": ["resourcepacks", "shaderpacks"]
+  },
+  "votingUrl": "https://github.com/yourname/ultimate-tech-pack/issues",
+  "issuesUrl": "https://github.com/yourname/ultimate-tech-pack/issues",
+  "downloadUrl": "https://example.com/modpacks/ultimate-tech-pack-v1.3.0.zip",
+  "votes": {
+    "totalDownloads": 1523,
+    "suggestedMods": [
+      {
+        "name": "AE2",
+        "curseForgeId": 223794,
+        "votes": 45,
+        "suggestedBy": "Player123",
+        "suggestedAt": "2025-01-18T12:00:00Z"
+      }
+    ]
+  },
+  "versionHistory": [
+    {
+      "version": "1.3.0",
+      "date": "2025-01-20T15:30:00Z",
+      "changes": [
+        "Added Create: Steam & Rails addon",
+        "Updated Mekanism to latest version",
+        "Fixed config conflict with Create and AE2",
+        "Added 5 new quality of life mods",
+        "Performance improvements"
+      ],
+      "modsAdded": [
+        {
+          "name": "Create: Steam & Rails",
+          "version": "1.5.2"
+        }
+      ],
+      "modsRemoved": [],
+      "modsUpdated": [
+        {
+          "name": "Mekanism",
+          "oldVersion": "10.4.0",
+          "newVersion": "10.4.5"
+        }
+      ]
+    },
+    {
+      "version": "1.2.0",
+      "date": "2025-01-15T10:00:00Z",
+      "changes": [
+        "Initial public release",
+        "50+ tech mods included",
+        "Custom configs for better balance",
+        "Quest book integration"
+      ],
+      "modsAdded": [],
+      "modsRemoved": [],
+      "modsUpdated": []
+    }
+  ],
+  "tags": ["tech", "automation", "create", "mekanism", "expert"],
+  "difficulty": "intermediate",
+  "playstyle": "automation-focused"
+}

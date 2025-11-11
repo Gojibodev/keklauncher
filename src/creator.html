@@ -319,6 +319,25 @@
         <div class="modal-content large">
             <h3>[GENERATE PUBLIC MODPACK]</h3>
             <p style="color: #00d9ff;">Create a shareable modpack.public.json file for hosting online</p>
+
+            <h4 style="color: #ff69b4; margin: 20px 0 10px 0;">[IMAGES]</h4>
+            <div class="input-group">
+                <label>THUMBNAIL URL:</label>
+                <input type="text" id="thumbnailUrl" class="input-field" placeholder="https://i.imgur.com/thumb.png" />
+                <small style="color: #888;">350x200px recommended (shown in grid)</small>
+            </div>
+            <div class="input-group">
+                <label>BANNER URL:</label>
+                <input type="text" id="bannerUrl" class="input-field" placeholder="https://i.imgur.com/banner.png" />
+                <small style="color: #888;">1920x400px recommended (shown in details)</small>
+            </div>
+            <div class="input-group">
+                <label>GALLERY URLS (comma-separated):</label>
+                <textarea id="galleryUrls" class="input-field" rows="3" placeholder="https://i.imgur.com/1.png, https://i.imgur.com/2.png"></textarea>
+                <small style="color: #888;">Upload to Imgur, ImgBB, or your hosting</small>
+            </div>
+
+            <h4 style="color: #ff69b4; margin: 20px 0 10px 0;">[LINKS]</h4>
             <div class="input-group">
                 <label>VOTING URL (optional):</label>
                 <input type="text" id="votingUrl" class="input-field" placeholder="https://github.com/user/repo/issues" />
@@ -334,6 +353,7 @@
                 <input type="text" id="downloadUrl" class="input-field" placeholder="https://example.com/modpack.zip" />
                 <small style="color: #888;">Direct ZIP download link</small>
             </div>
+
             <div class="modal-buttons">
                 <button class="btn-primary" onclick="generatePublicModpack()">GENERATE JSON</button>
                 <button class="btn-secondary" onclick="closeModal('publicModpackModal')">CANCEL</button>

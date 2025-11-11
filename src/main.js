@@ -9,6 +9,69 @@ const CurseForgeAPI = require('./curseforgeAPI');
 const ModpackCreator = require('./modpackCreator');
 require('dotenv').config();
 
+// Register custom URL protocol for deep linking
+if (process.defaultApp) {
+    if (process.argv.length >= 2) {
+        app.setAsDefaultProtocolClient('keklauncher', process.execPath, [path.resolve(process.argv[1])]);
+    }
+} else {
+    app.setAsDefaultProtocolClient('keklauncher');
+}
+
+// Handle the protocol on Windows
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // Someone tried to run a second instance, focus our window and handle the protocol
+        if (mainWindow) {
+            if (mainWindow.isMinimized()) mainWindow.restore();
+            mainWindow.focus();
+
+            // Handle protocol URL
+            const url = commandLine.find(arg => arg.startsWith('keklauncher://'));
+            if (url) {
+                handleProtocolUrl(url);
+            }
+        }
+    });
+}
+
+// Handle protocol on macOS
+app.on('open-url', (event, url) => {
+    event.preventDefault();
+    handleProtocolUrl(url);
+});
+
+// Handle custom protocol URL
+function handleProtocolUrl(url) {
+    console.log('Protocol URL received:', url);
+
+    try {
+        const urlObj = new URL(url);
+
+        if (urlObj.protocol === 'keklauncher:' && urlObj.hostname === 'install') {
+            const modpackUrl = urlObj.searchParams.get('url');
+
+            if (modpackUrl && mainWindow) {
+                // Navigate to creator page and trigger import
+                mainWindow.webContents.send('protocol-install', modpackUrl);
+
+                // Show notification
+                mainWindow.webContents.send('show-notification', {
+                    title: 'Modpack Installation',
+                    message: `Installing modpack from: ${modpackUrl}`,
+                    type: 'info'
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error parsing protocol URL:', error);
+    }
+}
+
 // Configure logging
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';

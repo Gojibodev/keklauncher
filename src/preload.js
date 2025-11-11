@@ -66,5 +66,9 @@ contextBridge.exposeInMainWorld('electron', {
 
     // Creator event listeners
     onCreatorDownloadProgress: (callback) => ipcRenderer.on('creator-download-progress', (event, data) => callback(data)),
-    onCreatorBatchProgress: (callback) => ipcRenderer.on('creator-batch-progress', (event, data) => callback(data))
+    onCreatorBatchProgress: (callback) => ipcRenderer.on('creator-batch-progress', (event, data) => callback(data)),
+
+    // Protocol handler events
+    onProtocolInstall: (callback) => ipcRenderer.on('protocol-install', (event, url) => callback(url)),
+    onShowNotification: (callback) => ipcRenderer.on('show-notification', (event, data) => callback(data))
 });

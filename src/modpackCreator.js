@@ -600,6 +600,24 @@ ${metadata.updatedAt ? `Last Updated: ${metadata.updatedAt}` : ''}
 
         const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
 
+        // Create version history entry for this export
+        const versionHistory = metadata.versionHistory || [];
+        if (metadata.version) {
+            const currentVersion = {
+                version: metadata.version,
+                date: new Date().toISOString(),
+                changes: options.changes || [],
+                modsAdded: options.modsAdded || [],
+                modsRemoved: options.modsRemoved || [],
+                modsUpdated: options.modsUpdated || []
+            };
+
+            // Only add if not already present
+            if (!versionHistory.find(v => v.version === metadata.version)) {
+                versionHistory.unshift(currentVersion);
+            }
+        }
+
         // Create public modpack JSON
         const publicModpack = {
             id: metadata.id,
@@ -613,6 +631,11 @@ ${metadata.updatedAt ? `Last Updated: ${metadata.updatedAt}` : ''}
             javaVersion: metadata.javaVersion,
             createdAt: metadata.createdAt,
             updatedAt: new Date().toISOString(),
+            images: {
+                thumbnail: options.thumbnail || metadata.images?.thumbnail || null,
+                banner: options.banner || metadata.images?.banner || null,
+                gallery: options.gallery || metadata.images?.gallery || []
+            },
             mods: metadata.mods.map(mod => ({
                 filename: mod.filename,
                 url: mod.url || null,
@@ -625,6 +648,10 @@ ${metadata.updatedAt ? `Last Updated: ${metadata.updatedAt}` : ''}
             votingUrl: options.votingUrl || metadata.votingUrl || null,
             issuesUrl: options.issuesUrl || metadata.issuesUrl || null,
             downloadUrl: options.downloadUrl || null,
+            versionHistory: versionHistory,
+            tags: options.tags || metadata.tags || [],
+            difficulty: options.difficulty || metadata.difficulty || 'normal',
+            playstyle: options.playstyle || metadata.playstyle || null,
             votes: metadata.votes || {
                 totalDownloads: 0,
                 suggestedMods: []
@@ -634,6 +661,14 @@ ${metadata.updatedAt ? `Last Updated: ${metadata.updatedAt}` : ''}
         // Save public JSON
         const publicPath = path.join(workDir, 'modpack.public.json');
         await fs.writeFile(publicPath, JSON.stringify(publicModpack, null, 2));
+
+        // Also update the metadata with new fields
+        metadata.versionHistory = versionHistory;
+        if (options.thumbnail) metadata.images = metadata.images || {};
+        if (options.thumbnail) metadata.images.thumbnail = options.thumbnail;
+        if (options.banner) metadata.images.banner = options.banner;
+        if (options.gallery) metadata.images.gallery = options.gallery;
+        await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
 
         return {
             success: true,
