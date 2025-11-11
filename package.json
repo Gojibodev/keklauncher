@@ -9,7 +9,9 @@
   "package": "cross-env GITHUB_TOKEN=$GITHUB_TOKEN electron-builder"
 },
   "dependencies": {
-    "electron-log": "^5.0.0"
+    "electron-log": "^5.0.0",
+    "archiver": "^7.0.0",
+    "fs-extra": "^11.0.0"
   },
   "devDependencies": {
     "electron": "^25.0.0",

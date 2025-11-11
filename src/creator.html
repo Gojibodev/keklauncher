@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEK Launcher - Modpack Creator</title>
+    <link rel="stylesheet" href="assets/styles.css">
+    <link rel="stylesheet" href="assets/creator.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>╔══════════════════════════════════════════════╗</h1>
+            <h1>║    KEK LAUNCHER - MODPACK CREATOR v1.0      ║</h1>
+            <h1>╚══════════════════════════════════════════════╝</h1>
+            <button class="btn-back" onclick="goBack()">← BACK TO LAUNCHER</button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="creator-content">
+            <!-- Sidebar - Workspaces List -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h3>[WORKSPACES]</h3>
+                    <button class="btn-new" onclick="showNewModpackModal()">+ NEW</button>
+                </div>
+                <div id="workspacesList" class="workspaces-list">
+                    <!-- Workspaces will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Main Editor -->
+            <div class="editor">
+                <div id="noWorkspaceMessage" class="no-workspace">
+                    <pre>
+ ╔════════════════════════════════════╗
+ ║   NO WORKSPACE SELECTED           ║
+ ║                                   ║
+ ║   Create a new modpack or        ║
+ ║   import from Minecraft          ║
+ ║   to get started                 ║
+ ╚════════════════════════════════════╝
+                    </pre>
+                </div>
+
+                <div id="workspaceEditor" class="workspace-editor" style="display: none;">
+                    <!-- Metadata Section -->
+                    <div class="section metadata-section">
+                        <h3>[MODPACK METADATA]</h3>
+                        <div class="metadata-grid">
+                            <div class="input-group">
+                                <label>NAME:</label>
+                                <input type="text" id="metaName" class="input-field" />
+                            </div>
+                            <div class="input-group">
+                                <label>VERSION:</label>
+                                <input type="text" id="metaVersion" class="input-field" />
+                            </div>
+                            <div class="input-group">
+                                <label>MC VERSION:</label>
+                                <input type="text" id="metaMcVersion" class="input-field" />
+                            </div>
+                            <div class="input-group">
+                                <label>MODLOADER:</label>
+                                <select id="metaModloader" class="input-field">
+                                    <option value="forge">Forge</option>
+                                    <option value="fabric">Fabric</option>
+                                    <option value="quilt">Quilt</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>AUTHOR:</label>
+                                <input type="text" id="metaAuthor" class="input-field" />
+                            </div>
+                            <div class="input-group">
+                                <label>REQUIRED RAM:</label>
+                                <input type="text" id="metaRam" class="input-field" placeholder="4G" />
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>DESCRIPTION:</label>
+                            <textarea id="metaDescription" class="input-field" rows="3"></textarea>
+                        </div>
+                        <button class="btn-primary" onclick="saveMetadata()">SAVE METADATA</button>
+                    </div>
+
+                    <!-- Mods Section -->
+                    <div class="section mods-section">
+                        <h3>[MODS] <span id="modCount" class="count">0</span></h3>
+                        <div class="action-buttons">
+                            <button class="btn-primary" onclick="showAddModModal()">+ ADD MOD</button>
+                            <button class="btn-primary" onclick="showBulkAddModal()">+ BULK ADD</button>
+                            <button class="btn-secondary" onclick="refreshModsList()">REFRESH</button>
+                        </div>
+                        <div id="modsList" class="items-list">
+                            <!-- Mods will be listed here -->
+                        </div>
+                    </div>
+
+                    <!-- Folders Section -->
+                    <div class="section folders-section">
+                        <h3>[FOLDERS]</h3>
+                        <div class="folders-grid">
+                            <div class="folder-item">
+                                <span class="folder-name">mods/</span>
+                                <span class="folder-badge essential">ESSENTIAL</span>
+                            </div>
+                            <div class="folder-item">
+                                <span class="folder-name">config/</span>
+                                <span class="folder-badge essential">ESSENTIAL</span>
+                            </div>
+                            <div id="optionalFolders"></div>
+                        </div>
+                        <div class="action-buttons">
+                            <button class="btn-secondary" onclick="showAddFolderModal()">+ ADD FOLDER</button>
+                        </div>
+                    </div>
+
+                    <!-- Export Section -->
+                    <div class="section export-section">
+                        <h3>[EXPORT & MANAGE]</h3>
+                        <div class="action-buttons-wide">
+                            <button class="btn-success" onclick="exportModpack(false)">EXPORT AS FOLDER</button>
+                            <button class="btn-success" onclick="exportModpack(true)">EXPORT AS ZIP</button>
+                            <button class="btn-secondary" onclick="openWorkspaceFolder()">OPEN WORKSPACE</button>
+                            <button class="btn-danger" onclick="deleteWorkspace()">DELETE WORKSPACE</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusArea" class="status-area">
+            <pre id="statusMessages"></pre>
+        </div>
+    </div>
+
+    <!-- Modal: New Modpack -->
+    <div id="newModpackModal" class="modal">
+        <div class="modal-content">
+            <h3>[CREATE NEW MODPACK]</h3>
+            <div class="input-group">
+                <label>MODPACK ID (folder name):</label>
+                <input type="text" id="newModpackId" class="input-field" placeholder="my-modpack" />
+            </div>
+            <div class="input-group">
+                <label>NAME:</label>
+                <input type="text" id="newModpackName" class="input-field" placeholder="My Modpack" />
+            </div>
+            <div class="input-group">
+                <label>MINECRAFT VERSION:</label>
+                <input type="text" id="newModpackMcVersion" class="input-field" placeholder="1.20.1" />
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="createNewModpack()">CREATE</button>
+                <button class="btn-secondary" onclick="showImportModal()">IMPORT FROM MC</button>
+                <button class="btn-secondary" onclick="closeModal('newModpackModal')">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Import from Minecraft -->
+    <div id="importModal" class="modal">
+        <div class="modal-content">
+            <h3>[IMPORT FROM MINECRAFT]</h3>
+            <div class="input-group">
+                <label>MINECRAFT PATH:</label>
+                <input type="text" id="importMcPath" class="input-field" placeholder="C:\Users\...\AppData\Roaming\.minecraft" />
+            </div>
+            <div class="input-group">
+                <label>MODPACK ID:</label>
+                <input type="text" id="importModpackId" class="input-field" placeholder="imported-modpack" />
+            </div>
+            <div class="input-group">
+                <label>NAME:</label>
+                <input type="text" id="importModpackName" class="input-field" placeholder="Imported Modpack" />
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="importFromMinecraft()">IMPORT</button>
+                <button class="btn-secondary" onclick="closeModal('importModal')">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Mod -->
+    <div id="addModModal" class="modal">
+        <div class="modal-content">
+            <h3>[ADD MOD]</h3>
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('urlTab')">DIRECT URL</button>
+                <button class="tab-btn" onclick="switchTab('curseforgeTab')">CURSEFORGE</button>
+            </div>
+
+            <div id="urlTab" class="tab-content active">
+                <div class="input-group">
+                    <label>MOD URL:</label>
+                    <input type="text" id="modUrl" class="input-field" placeholder="https://example.com/mod.jar" />
+                </div>
+                <button class="btn-primary" onclick="addModFromURL()">DOWNLOAD MOD</button>
+            </div>
+
+            <div id="curseforgeTab" class="tab-content">
+                <div class="input-group">
+                    <label>SEARCH MODS:</label>
+                    <input type="text" id="cfSearchQuery" class="input-field" placeholder="JEI, OptiFine, etc." />
+                    <button class="btn-secondary" onclick="searchCurseForge()">SEARCH</button>
+                </div>
+                <div id="cfSearchResults" class="search-results"></div>
+                <div class="input-group">
+                    <label>OR MOD ID:</label>
+                    <input type="text" id="cfModId" class="input-field" placeholder="123456" />
+                    <button class="btn-primary" onclick="addModFromCurseForge()">ADD MOD</button>
+                </div>
+            </div>
+
+            <button class="btn-secondary" onclick="closeModal('addModModal')">CLOSE</button>
+        </div>
+    </div>
+
+    <!-- Modal: Bulk Add -->
+    <div id="bulkAddModal" class="modal">
+        <div class="modal-content large">
+            <h3>[BULK ADD MODS]</h3>
+            <p>Enter CurseForge mod IDs, one per line:</p>
+            <textarea id="bulkModIds" class="input-field" rows="10" placeholder="238222&#10;32274&#10;74072"></textarea>
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="bulkAddMods()">ADD ALL</button>
+                <button class="btn-secondary" onclick="closeModal('bulkAddModal')">CANCEL</button>
+            </div>
+            <div id="bulkProgress" class="progress-info"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Add Folder -->
+    <div id="addFolderModal" class="modal">
+        <div class="modal-content">
+            <h3>[ADD FOLDER]</h3>
+            <div class="input-group">
+                <label>FOLDER NAME:</label>
+                <select id="folderName" class="input-field">
+                    <option value="resourcepacks">resourcepacks</option>
+                    <option value="shaderpacks">shaderpacks</option>
+                    <option value="scripts">scripts</option>
+                    <option value="kubejs">kubejs</option>
+                    <option value="defaultconfigs">defaultconfigs</option>
+                    <option value="schematics">schematics</option>
+                    <option value="saves">saves</option>
+                    <option value="journeymap">journeymap</option>
+                    <option value="openloader">openloader</option>
+                    <option value="custom">Custom...</option>
+                </select>
+                <input type="text" id="customFolderName" class="input-field" placeholder="folder-name" style="display: none;" />
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="addFolder()">ADD FOLDER</button>
+                <button class="btn-secondary" onclick="closeModal('addFolderModal')">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="creator.js"></script>
+</body>
+</html>

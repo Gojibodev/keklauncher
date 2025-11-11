@@ -6,6 +6,7 @@ const ModpackManager = require('./modpackManager');
 const ModDownloader = require('./modDownloader');
 const MinecraftLauncher = require('./minecraftLauncher');
 const CurseForgeAPI = require('./curseforgeAPI');
+const ModpackCreator = require('./modpackCreator');
 require('dotenv').config();
 
 // Configure logging
@@ -29,6 +30,9 @@ let curseForgeAPI = null;
 if (process.env.CURSEFORGE_API_KEY) {
     curseForgeAPI = new CurseForgeAPI(process.env.CURSEFORGE_API_KEY);
 }
+
+// Initialize Modpack Creator
+const modpackCreator = new ModpackCreator(curseForgeAPI);
 
 let modDownloader = null;
 let mainWindow = null;
@@ -328,6 +332,167 @@ function createWindow() {
     // Check if CurseForge API is available
     ipcMain.handle('curseforge-check', async () => {
         return { success: true, available: curseForgeAPI !== null };
+    });
+
+    // ===== Modpack Creator Handlers =====
+
+    ipcMain.handle('creator-new-modpack', async (event, modpackId, metadata) => {
+        try {
+            const result = modpackCreator.createNewModpack(modpackId, metadata);
+            return result;
+        } catch (error) {
+            console.error('Error creating modpack:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-import-from-minecraft', async (event, minecraftPath, modpackId, metadata) => {
+        try {
+            const result = await modpackCreator.importFromMinecraft(minecraftPath, modpackId, metadata);
+            return result;
+        } catch (error) {
+            console.error('Error importing from Minecraft:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-list-workspaces', async () => {
+        try {
+            const workspaces = modpackCreator.listWorkspaces();
+            return { success: true, workspaces };
+        } catch (error) {
+            console.error('Error listing workspaces:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-add-folder', async (event, modpackId, folderName) => {
+        try {
+            const result = modpackCreator.addFolder(modpackId, folderName);
+            return result;
+        } catch (error) {
+            console.error('Error adding folder:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-add-file', async (event, modpackId, folderName, sourcePath) => {
+        try {
+            const result = await modpackCreator.addFile(modpackId, folderName, sourcePath);
+            return result;
+        } catch (error) {
+            console.error('Error adding file:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-add-mod-url', async (event, modpackId, url) => {
+        try {
+            const result = await modpackCreator.addModFromURL(modpackId, url, (downloaded, total, percent) => {
+                mainWindow.webContents.send('creator-download-progress', {
+                    type: 'url',
+                    url,
+                    downloaded,
+                    total,
+                    percent
+                });
+            });
+            return result;
+        } catch (error) {
+            console.error('Error adding mod from URL:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-add-mod-curseforge', async (event, modpackId, modId, minecraftVersion) => {
+        try {
+            const result = await modpackCreator.addModFromCurseForge(modpackId, modId, minecraftVersion, (downloaded, total, percent) => {
+                mainWindow.webContents.send('creator-download-progress', {
+                    type: 'curseforge',
+                    modId,
+                    downloaded,
+                    total,
+                    percent
+                });
+            });
+            return result;
+        } catch (error) {
+            console.error('Error adding mod from CurseForge:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-add-mods-curseforge', async (event, modpackId, modIds, minecraftVersion) => {
+        try {
+            const result = await modpackCreator.addModsFromCurseForge(modpackId, modIds, minecraftVersion, (progress) => {
+                mainWindow.webContents.send('creator-batch-progress', progress);
+            });
+            return result;
+        } catch (error) {
+            console.error('Error adding mods from CurseForge:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-search-curseforge', async (event, modpackId, searchQuery, minecraftVersion) => {
+        try {
+            const results = await modpackCreator.searchAndAddMod(modpackId, searchQuery, minecraftVersion);
+            return { success: true, results };
+        } catch (error) {
+            console.error('Error searching CurseForge:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-set-installer', async (event, modpackId, installerPath) => {
+        try {
+            const result = await modpackCreator.setInstaller(modpackId, installerPath);
+            return result;
+        } catch (error) {
+            console.error('Error setting installer:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-update-metadata', async (event, modpackId, updates) => {
+        try {
+            const result = modpackCreator.updateMetadata(modpackId, updates);
+            return result;
+        } catch (error) {
+            console.error('Error updating metadata:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-export-modpack', async (event, modpackId, exportAsZip) => {
+        try {
+            const result = await modpackCreator.exportModpack(modpackId, exportAsZip);
+            return result;
+        } catch (error) {
+            console.error('Error exporting modpack:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-delete-workspace', async (event, modpackId) => {
+        try {
+            const result = modpackCreator.deleteWorkspace(modpackId);
+            return result;
+        } catch (error) {
+            console.error('Error deleting workspace:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-open-workspace', async (event, modpackId) => {
+        try {
+            const workDir = path.join(modpackCreator.workspacePath, modpackId);
+            shell.openPath(workDir);
+            return { success: true };
+        } catch (error) {
+            console.error('Error opening workspace:', error);
+            return { success: false, error: error.message };
+        }
     });
 }
 

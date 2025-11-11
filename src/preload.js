@@ -39,5 +39,25 @@ contextBridge.exposeInMainWorld('electron', {
     // CurseForge API
     curseForgeSearch: (query, minecraftVersion) => ipcRenderer.invoke('curseforge-search', query, minecraftVersion),
     curseForgeGetMod: (modId, minecraftVersion) => ipcRenderer.invoke('curseforge-get-mod', modId, minecraftVersion),
-    curseForgeCheck: () => ipcRenderer.invoke('curseforge-check')
+    curseForgeCheck: () => ipcRenderer.invoke('curseforge-check'),
+
+    // Modpack Creator
+    creatorNewModpack: (modpackId, metadata) => ipcRenderer.invoke('creator-new-modpack', modpackId, metadata),
+    creatorImportFromMinecraft: (minecraftPath, modpackId, metadata) => ipcRenderer.invoke('creator-import-from-minecraft', minecraftPath, modpackId, metadata),
+    creatorListWorkspaces: () => ipcRenderer.invoke('creator-list-workspaces'),
+    creatorAddFolder: (modpackId, folderName) => ipcRenderer.invoke('creator-add-folder', modpackId, folderName),
+    creatorAddFile: (modpackId, folderName, sourcePath) => ipcRenderer.invoke('creator-add-file', modpackId, folderName, sourcePath),
+    creatorAddModFromURL: (modpackId, url) => ipcRenderer.invoke('creator-add-mod-url', modpackId, url),
+    creatorAddModFromCurseForge: (modpackId, modId, minecraftVersion) => ipcRenderer.invoke('creator-add-mod-curseforge', modpackId, modId, minecraftVersion),
+    creatorAddModsFromCurseForge: (modpackId, modIds, minecraftVersion) => ipcRenderer.invoke('creator-add-mods-curseforge', modpackId, modIds, minecraftVersion),
+    creatorSearchCurseForge: (modpackId, searchQuery, minecraftVersion) => ipcRenderer.invoke('creator-search-curseforge', modpackId, searchQuery, minecraftVersion),
+    creatorSetInstaller: (modpackId, installerPath) => ipcRenderer.invoke('creator-set-installer', modpackId, installerPath),
+    creatorUpdateMetadata: (modpackId, updates) => ipcRenderer.invoke('creator-update-metadata', modpackId, updates),
+    creatorExportModpack: (modpackId, exportAsZip) => ipcRenderer.invoke('creator-export-modpack', modpackId, exportAsZip),
+    creatorDeleteWorkspace: (modpackId) => ipcRenderer.invoke('creator-delete-workspace', modpackId),
+    creatorOpenWorkspace: (modpackId) => ipcRenderer.invoke('creator-open-workspace', modpackId),
+
+    // Creator event listeners
+    onCreatorDownloadProgress: (callback) => ipcRenderer.on('creator-download-progress', (event, data) => callback(data)),
+    onCreatorBatchProgress: (callback) => ipcRenderer.on('creator-batch-progress', (event, data) => callback(data))
 });
