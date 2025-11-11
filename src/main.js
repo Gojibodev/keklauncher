@@ -4,6 +4,9 @@ const { autoUpdater } = require('electron-updater');
 const log = require('electron-log');
 const ModpackManager = require('./modpackManager');
 const ModDownloader = require('./modDownloader');
+const MinecraftLauncher = require('./minecraftLauncher');
+const CurseForgeAPI = require('./curseforgeAPI');
+require('dotenv').config();
 
 // Configure logging
 autoUpdater.logger = log;
@@ -13,11 +16,19 @@ autoUpdater.logger.transports.file.level = 'info';
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 
-// Initialize modpack manager
+// Initialize managers
 const modpackManager = new ModpackManager(
     path.join(__dirname, '../modpacks'),
-    path.join(__dirname, '../mods')
+    null // Will use AppData/.kek/modpacks
 );
+
+const minecraftLauncher = new MinecraftLauncher();
+
+// Initialize CurseForge API if key is available
+let curseForgeAPI = null;
+if (process.env.CURSEFORGE_API_KEY) {
+    curseForgeAPI = new CurseForgeAPI(process.env.CURSEFORGE_API_KEY);
+}
 
 let modDownloader = null;
 let mainWindow = null;
@@ -223,6 +234,100 @@ function createWindow() {
             console.error('Error getting installed mods:', error);
             return { success: false, error: error.message };
         }
+    });
+
+    // ============ MINECRAFT LAUNCHER HANDLERS ============
+
+    // Launch Minecraft
+    ipcMain.handle('launch-minecraft', async (event, profileName) => {
+        try {
+            const result = await minecraftLauncher.launchMinecraft(profileName);
+            return result;
+        } catch (error) {
+            console.error('Error launching Minecraft:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // Check if Minecraft is installed
+    ipcMain.handle('check-minecraft', async () => {
+        try {
+            const isInstalled = minecraftLauncher.isMinecraftInstalled();
+            return { success: true, isInstalled };
+        } catch (error) {
+            console.error('Error checking Minecraft:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // Switch to modpack
+    ipcMain.handle('switch-modpack', async (event, modpackId) => {
+        try {
+            const result = modpackManager.switchToModpack(modpackId, 'copy');
+            return result;
+        } catch (error) {
+            console.error('Error switching modpack:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // Get active modpack
+    ipcMain.handle('get-active-modpack', async () => {
+        try {
+            const activeModpack = modpackManager.getActiveModpack();
+            return { success: true, activeModpack };
+        } catch (error) {
+            console.error('Error getting active modpack:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // Create Minecraft profile
+    ipcMain.handle('create-minecraft-profile', async (event, modpackName, minecraftVersion) => {
+        try {
+            const result = minecraftLauncher.createProfile(modpackName, minecraftVersion);
+            return result;
+        } catch (error) {
+            console.error('Error creating profile:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // ============ CURSEFORGE API HANDLERS ============
+
+    // Search CurseForge mods
+    ipcMain.handle('curseforge-search', async (event, query, minecraftVersion) => {
+        try {
+            if (!curseForgeAPI) {
+                return { success: false, error: 'CurseForge API key not configured' };
+            }
+
+            const mods = await curseForgeAPI.searchMods(query, minecraftVersion, 20);
+            return { success: true, mods };
+        } catch (error) {
+            console.error('Error searching CurseForge:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // Get mod for modpack from CurseForge
+    ipcMain.handle('curseforge-get-mod', async (event, modId, minecraftVersion) => {
+        try {
+            if (!curseForgeAPI) {
+                return { success: false, error: 'CurseForge API key not configured' };
+            }
+
+            const mod = await curseForgeAPI.getModForModpack(modId, minecraftVersion);
+            return { success: true, mod };
+        } catch (error) {
+            console.error('Error getting mod from CurseForge:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // Check if CurseForge API is available
+    ipcMain.handle('curseforge-check', async () => {
+        return { success: true, available: curseForgeAPI !== null };
     });
 }
 

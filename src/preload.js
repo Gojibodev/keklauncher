@@ -27,5 +27,17 @@ contextBridge.exposeInMainWorld('electron', {
     onModDownloadProgress: (callback) => ipcRenderer.on('mod-download-progress', (event, data) => callback(data)),
     onModDownloadOverall: (callback) => ipcRenderer.on('mod-download-overall', (event, data) => callback(data)),
     onDownloadCompleted: (callback) => ipcRenderer.on('download-completed', (event, data) => callback(data)),
-    onDownloadError: (callback) => ipcRenderer.on('download-error', (event, data) => callback(data))
+    onDownloadError: (callback) => ipcRenderer.on('download-error', (event, data) => callback(data)),
+
+    // Minecraft launcher
+    launchMinecraft: (profileName) => ipcRenderer.invoke('launch-minecraft', profileName),
+    checkMinecraft: () => ipcRenderer.invoke('check-minecraft'),
+    switchModpack: (modpackId) => ipcRenderer.invoke('switch-modpack', modpackId),
+    getActiveModpack: () => ipcRenderer.invoke('get-active-modpack'),
+    createMinecraftProfile: (modpackName, minecraftVersion) => ipcRenderer.invoke('create-minecraft-profile', modpackName, minecraftVersion),
+
+    // CurseForge API
+    curseForgeSearch: (query, minecraftVersion) => ipcRenderer.invoke('curseforge-search', query, minecraftVersion),
+    curseForgeGetMod: (modId, minecraftVersion) => ipcRenderer.invoke('curseforge-get-mod', modId, minecraftVersion),
+    curseForgeCheck: () => ipcRenderer.invoke('curseforge-check')
 });

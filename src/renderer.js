@@ -332,6 +332,87 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Overall progress: ${completed}/${total} (${percent.toFixed(1)}%)`);
     });
 
+    // Launch button
+    const launchButton = document.getElementById('launch-button');
+    if (launchButton) {
+        launchButton.addEventListener('click', async () => {
+            if (!currentModpackId) {
+                statusMessage.textContent = '[ERROR] No modpack selected';
+                statusMessage.className = 'status-message error';
+                return;
+            }
+
+            try {
+                // First, check if Minecraft is installed
+                const checkResult = await window.electron.checkMinecraft();
+
+                if (!checkResult.isInstalled) {
+                    statusMessage.textContent = '[ERROR] Minecraft not found. Please install Minecraft first.';
+                    statusMessage.className = 'status-message error';
+                    return;
+                }
+
+                // Switch to this modpack
+                statusMessage.textContent = `[INFO] Switching to ${currentModpackId}...`;
+                statusMessage.className = 'status-message info';
+                launchButton.disabled = true;
+
+                const switchResult = await window.electron.switchModpack(currentModpackId);
+
+                if (!switchResult.success) {
+                    statusMessage.textContent = `[ERROR] Failed to switch modpack: ${switchResult.error}`;
+                    statusMessage.className = 'status-message error';
+                    launchButton.disabled = false;
+                    return;
+                }
+
+                // Create or update profile
+                const modpack = await window.electron.loadModpack(currentModpackId);
+                if (modpack.success) {
+                    await window.electron.createMinecraftProfile(
+                        modpack.modpack.name,
+                        modpack.modpack.minecraftVersion
+                    );
+                }
+
+                // Launch Minecraft
+                statusMessage.textContent = '[INFO] Launching Minecraft...';
+                const launchResult = await window.electron.launchMinecraft();
+
+                if (launchResult.success) {
+                    statusMessage.textContent = `[OK] Minecraft launched! ${switchResult.copiedCount} mods copied`;
+                    statusMessage.className = 'status-message success';
+                } else {
+                    statusMessage.textContent = `[ERROR] Failed to launch: ${launchResult.error}`;
+                    statusMessage.className = 'status-message error';
+                }
+
+                launchButton.disabled = false;
+            } catch (error) {
+                console.error('Error launching:', error);
+                statusMessage.textContent = `[ERROR] ${error.message}`;
+                statusMessage.className = 'status-message error';
+                launchButton.disabled = false;
+            }
+        });
+    }
+
+    // Check for active modpack on startup
+    async function checkActiveModpack() {
+        try {
+            const result = await window.electron.getActiveModpack();
+
+            if (result.success && result.activeModpack) {
+                const { modpackId, switchedAt } = result.activeModpack;
+                const date = new Date(switchedAt).toLocaleString();
+                console.log(`Active modpack: ${modpackId} (switched at ${date})`);
+            }
+        } catch (error) {
+            console.error('Error checking active modpack:', error);
+        }
+    }
+
     // Initialize modpacks
     loadModpacks();
+    checkActiveModpack();
 });
