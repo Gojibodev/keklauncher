@@ -8,7 +8,9 @@
   "build": "electron-packager . minecraft-modpack-manager --platform=win32 --arch=x64 --overwrite",
   "package": "cross-env GITHUB_TOKEN=$GITHUB_TOKEN electron-builder"
 },
-  "dependencies": {},
+  "dependencies": {
+    "electron-log": "^5.0.0"
+  },
   "devDependencies": {
     "electron": "^25.0.0",
     "electron-builder": "^25.1.8",

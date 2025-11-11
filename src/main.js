@@ -1,8 +1,13 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { autoUpdater, AppUpdater } = require('electron-updater');
+const { autoUpdater } = require('electron-updater');
+const log = require('electron-log');
 
+// Configure logging
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
 
+// Configure auto-updater
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
 function createWindow() {
@@ -30,24 +35,44 @@ function createWindow() {
         mainWindow.close();
     });
 
+    // Handle update check request
     ipcMain.on('check-for-updates', () => {
         autoUpdater.checkForUpdates();
     });
 
-    autoUpdater.on('update-available', () => {
-        mainWindow.webContents.send('update-available');
+    // Handle download update request
+    ipcMain.on('download-update', () => {
+        autoUpdater.downloadUpdate();
     });
 
-    autoUpdater.on('update-not-available', () => {
-        mainWindow.webContents.send('update-not-available');
+    // Handle install update request
+    ipcMain.on('install-update', () => {
+        autoUpdater.quitAndInstall();
+    });
+
+    // Auto-updater events
+    autoUpdater.on('checking-for-update', () => {
+        mainWindow.webContents.send('checking-for-update');
+    });
+
+    autoUpdater.on('update-available', (info) => {
+        mainWindow.webContents.send('update-available', info);
+    });
+
+    autoUpdater.on('update-not-available', (info) => {
+        mainWindow.webContents.send('update-not-available', info);
     });
 
     autoUpdater.on('download-progress', (progressObj) => {
         mainWindow.webContents.send('download-progress', progressObj);
     });
 
-    autoUpdater.on('update-downloaded', () => {
-        mainWindow.webContents.send('update-downloaded');
+    autoUpdater.on('update-downloaded', (info) => {
+        mainWindow.webContents.send('update-downloaded', info);
+    });
+
+    autoUpdater.on('error', (err) => {
+        mainWindow.webContents.send('update-error', err);
     });
 }
 
