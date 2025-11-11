@@ -177,6 +177,24 @@
     flex-wrap: wrap;
 }
 
+.export-options {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.export-group {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border: 1px solid #00d9ff;
+}
+
+.export-group h4 {
+    margin: 0 0 10px 0;
+    color: #ff69b4;
+    font-size: 13px;
+}
+
 .btn-primary, .btn-secondary, .btn-success, .btn-danger {
     padding: 10px 20px;
     border: 2px solid;

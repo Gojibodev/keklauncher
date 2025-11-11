@@ -472,15 +472,32 @@ async function addFolder() {
 }
 
 // Export modpack
-async function exportModpack(asZip) {
+async function exportModpack(asZip, exportType = 'appdata') {
     if (!currentWorkspaceId) return;
 
     addStatus(`Exporting modpack${asZip ? ' as ZIP' : ''}...`, 'info');
 
-    const result = await window.electron.creatorExportModpack(currentWorkspaceId, asZip);
+    let result;
+    if (exportType === 'shareable') {
+        result = await window.electron.creatorExportShareable(currentWorkspaceId, asZip);
+    } else if (exportType === 'project') {
+        result = await window.electron.creatorExportProject(currentWorkspaceId, asZip);
+    } else {
+        result = await window.electron.creatorExportModpack(currentWorkspaceId, asZip);
+    }
 
     if (result.success) {
         addStatus(`Exported to: ${result.path}${asZip ? '\nZIP: ' + result.zipPath : ''}`, 'success');
+    } else {
+        addStatus(`Error: ${result.error}`, 'error');
+    }
+}
+
+// Open export folder
+async function openExportFolder(folderType) {
+    const result = await window.electron.creatorOpenExportFolder(folderType);
+    if (result.success) {
+        addStatus(`Opening folder: ${result.path}`, 'info');
     } else {
         addStatus(`Error: ${result.error}`, 'error');
     }
@@ -537,4 +554,104 @@ function addStatus(message, type = 'info') {
 
     // Auto-scroll to bottom
     statusArea.parentElement.scrollTop = statusArea.parentElement.scrollHeight;
+}
+
+// Show import from URL modal
+function showImportURLModal() {
+    showModal('importURLModal');
+}
+
+// Import modpack from URL
+async function importFromURL() {
+    const url = document.getElementById('modpackUrl').value.trim();
+    const modpackId = document.getElementById('urlModpackId').value.trim() || null;
+
+    if (!url) {
+        addStatus('Please enter a modpack URL', 'error');
+        return;
+    }
+
+    const progressDiv = document.getElementById('urlImportProgress');
+    progressDiv.style.display = 'block';
+    progressDiv.textContent = 'Downloading modpack.json...';
+
+    addStatus(`Importing modpack from URL...`, 'info');
+
+    try {
+        const result = await window.electron.creatorInstallFromURL(url, modpackId);
+
+        if (result.success) {
+            progressDiv.textContent = `Imported ${result.results.successful} mods successfully, ${result.results.failed} failed`;
+            addStatus(`Modpack imported! Workspace: ${result.workspaceId}`, 'success');
+            addStatus(`Successful: ${result.results.successful}, Failed: ${result.results.failed}`, 'info');
+
+            setTimeout(() => {
+                closeModal('importURLModal');
+                progressDiv.style.display = 'none';
+                progressDiv.textContent = '';
+                loadWorkspaces();
+                selectWorkspace(result.workspaceId);
+            }, 2000);
+        } else {
+            progressDiv.textContent = `Error: ${result.error}`;
+            addStatus(`Error: ${result.error}`, 'error');
+        }
+    } catch (error) {
+        progressDiv.textContent = `Error: ${error.message}`;
+        addStatus(`Error: ${error.message}`, 'error');
+    }
+}
+
+// Show public modpack modal
+function showPublicModpackModal() {
+    if (!currentWorkspaceId) {
+        addStatus('Please select a workspace first', 'error');
+        return;
+    }
+    showModal('publicModpackModal');
+}
+
+// Generate public modpack JSON
+async function generatePublicModpack() {
+    if (!currentWorkspaceId) return;
+
+    const votingUrl = document.getElementById('votingUrl').value.trim();
+    const issuesUrl = document.getElementById('issuesUrl').value.trim();
+    const downloadUrl = document.getElementById('downloadUrl').value.trim();
+
+    const options = {};
+    if (votingUrl) options.votingUrl = votingUrl;
+    if (issuesUrl) options.issuesUrl = issuesUrl;
+    if (downloadUrl) options.downloadUrl = downloadUrl;
+
+    addStatus('Generating public modpack JSON...', 'info');
+
+    const result = await window.electron.creatorGeneratePublic(currentWorkspaceId, options);
+
+    if (result.success) {
+        const generatedDiv = document.getElementById('publicGenerated');
+        generatedDiv.style.display = 'block';
+        generatedDiv.innerHTML = `
+            <div style="color: #0f0;">[SUCCESS] Generated public modpack JSON!</div>
+            <div style="margin-top: 10px;">Path: ${result.path}</div>
+            <div style="margin-top: 10px; color: #00d9ff;">
+                <strong>Next Steps:</strong><br>
+                1. Upload modpack.public.json to GitHub, Pastebin, or your website<br>
+                2. Share the raw JSON URL with users<br>
+                3. Users can import using "Import from URL" in KEK Launcher<br>
+                <br>
+                <strong>Example URLs:</strong><br>
+                GitHub: https://raw.githubusercontent.com/user/repo/main/modpack.json<br>
+                Pastebin: https://pastebin.com/raw/xxxxx<br>
+            </div>
+        `;
+        addStatus('Public modpack JSON generated!', 'success');
+
+        setTimeout(() => {
+            // Open workspace folder to show the file
+            openWorkspaceFolder();
+        }, 1000);
+    } else {
+        addStatus(`Error: ${result.error}`, 'error');
+    }
 }

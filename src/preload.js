@@ -54,8 +54,15 @@ contextBridge.exposeInMainWorld('electron', {
     creatorSetInstaller: (modpackId, installerPath) => ipcRenderer.invoke('creator-set-installer', modpackId, installerPath),
     creatorUpdateMetadata: (modpackId, updates) => ipcRenderer.invoke('creator-update-metadata', modpackId, updates),
     creatorExportModpack: (modpackId, exportAsZip) => ipcRenderer.invoke('creator-export-modpack', modpackId, exportAsZip),
+    creatorExportShareable: (modpackId, exportAsZip) => ipcRenderer.invoke('creator-export-shareable', modpackId, exportAsZip),
+    creatorExportProject: (modpackId, exportAsZip) => ipcRenderer.invoke('creator-export-project', modpackId, exportAsZip),
+    creatorLoadToWorkspace: (modpackPath, newWorkspaceId) => ipcRenderer.invoke('creator-load-to-workspace', modpackPath, newWorkspaceId),
     creatorDeleteWorkspace: (modpackId) => ipcRenderer.invoke('creator-delete-workspace', modpackId),
     creatorOpenWorkspace: (modpackId) => ipcRenderer.invoke('creator-open-workspace', modpackId),
+    creatorOpenExportFolder: (folderType) => ipcRenderer.invoke('creator-open-export-folder', folderType),
+    creatorInstallFromURL: (modpackUrl, modpackId) => ipcRenderer.invoke('creator-install-from-url', modpackUrl, modpackId),
+    creatorGeneratePublic: (modpackId, options) => ipcRenderer.invoke('creator-generate-public', modpackId, options),
+    creatorSuggestMod: (modpackId, modInfo) => ipcRenderer.invoke('creator-suggest-mod', modpackId, modInfo),
 
     // Creator event listeners
     onCreatorDownloadProgress: (callback) => ipcRenderer.on('creator-download-progress', (event, data) => callback(data)),

@@ -322,7 +322,7 @@ class ModpackCreator {
     /**
      * Export modpack to final location
      */
-    async exportModpack(modpackId, exportAsZip = false) {
+    async exportModpack(modpackId, exportAsZip = false, customPath = null) {
         const workDir = path.join(this.workspacePath, modpackId);
         const metadataPath = path.join(workDir, 'modpack.json');
 
@@ -332,8 +332,14 @@ class ModpackCreator {
 
         const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
 
-        // Create final modpack folder
-        const finalPath = path.join(this.modpacksPath, modpackId);
+        // Determine export path
+        let finalPath;
+        if (customPath) {
+            finalPath = path.join(customPath, modpackId);
+        } else {
+            finalPath = path.join(this.modpacksPath, modpackId);
+        }
+
         fs.ensureDirSync(finalPath);
 
         // Copy all folders
@@ -356,9 +362,13 @@ class ModpackCreator {
         // Copy metadata
         await fs.copy(metadataPath, path.join(finalPath, 'modpack.json'));
 
+        // Create README for sharing
+        await this.createReadme(finalPath, metadata);
+
         let zipPath = null;
         if (exportAsZip) {
-            zipPath = path.join(this.modpacksPath, `${modpackId}.zip`);
+            const zipDir = customPath || this.modpacksPath;
+            zipPath = path.join(zipDir, `${modpackId}.zip`);
             await this.createZip(finalPath, zipPath);
         }
 
@@ -367,6 +377,320 @@ class ModpackCreator {
             path: finalPath,
             zipPath: zipPath,
             metadata: metadata
+        };
+    }
+
+    /**
+     * Export to shareable location (Documents/KEK Modpacks)
+     */
+    async exportToShareable(modpackId, exportAsZip = false) {
+        const documentsPath = app.getPath('documents');
+        const shareablePath = path.join(documentsPath, 'KEK Modpacks');
+        fs.ensureDirSync(shareablePath);
+
+        return await this.exportModpack(modpackId, exportAsZip, shareablePath);
+    }
+
+    /**
+     * Export to project root modpacks folder (for development)
+     */
+    async exportToProjectRoot(modpackId, exportAsZip = false) {
+        // Get project root (assuming src is one level down)
+        const projectRoot = path.join(app.getAppPath(), '..');
+        const projectModpacksPath = path.join(projectRoot, 'modpacks');
+        fs.ensureDirSync(projectModpacksPath);
+
+        return await this.exportModpack(modpackId, exportAsZip, projectModpacksPath);
+    }
+
+    /**
+     * Load existing modpack into workspace for editing
+     */
+    async loadModpackToWorkspace(modpackPath, newWorkspaceId = null) {
+        const metadataPath = path.join(modpackPath, 'modpack.json');
+
+        if (!fs.existsSync(metadataPath)) {
+            throw new Error('Invalid modpack: modpack.json not found');
+        }
+
+        const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+        const workspaceId = newWorkspaceId || metadata.id || path.basename(modpackPath);
+
+        const workDir = path.join(this.workspacePath, workspaceId);
+
+        if (fs.existsSync(workDir)) {
+            throw new Error(`Workspace '${workspaceId}' already exists`);
+        }
+
+        // Copy entire modpack to workspace
+        await fs.copy(modpackPath, workDir);
+
+        return {
+            success: true,
+            path: workDir,
+            workspaceId: workspaceId,
+            metadata: metadata
+        };
+    }
+
+    /**
+     * Create README file for sharing
+     */
+    async createReadme(modpackPath, metadata) {
+        const readmeContent = `# ${metadata.name}
+
+**Version:** ${metadata.version}
+**Minecraft Version:** ${metadata.minecraftVersion}
+**Modloader:** ${metadata.modloader.type} (${metadata.modloader.version})
+**Author:** ${metadata.author}
+**Required RAM:** ${metadata.requiredRam}
+**Java Version:** ${metadata.javaVersion}
+
+## Description
+${metadata.description || 'No description provided'}
+
+## Installation
+
+### Automatic (KEK Launcher) - From URL
+1. Open KEK Launcher → Modpack Creator
+2. Click "Import from URL"
+3. Paste the modpack.json URL
+4. Click "Download & Install"
+
+### Automatic (KEK Launcher) - Manual
+1. Open KEK Launcher
+2. Place this modpack folder in: \`%AppData%/.kek/modpacks/\`
+3. Restart KEK Launcher
+4. Select the modpack and click Download/Launch
+
+### Manual
+1. Install ${metadata.modloader.type} ${metadata.modloader.version} for Minecraft ${metadata.minecraftVersion}
+2. Copy the \`mods/\` folder to your \`.minecraft/mods/\`
+3. Copy the \`config/\` folder to your \`.minecraft/config/\`
+4. Copy any other folders (resourcepacks, shaderpacks, etc.) to their respective locations
+5. Launch Minecraft with the ${metadata.modloader.type} profile
+
+## Mods Included
+This modpack contains ${metadata.mods.length} mods.
+
+## Suggest Mods
+Want a mod added? Open an issue or vote for existing suggestions!
+${metadata.votingUrl ? `Vote here: ${metadata.votingUrl}` : ''}
+
+## Created with KEK Launcher
+Modpack created using KEK Launcher's Modpack Creator
+Created: ${metadata.createdAt || 'Unknown'}
+${metadata.updatedAt ? `Last Updated: ${metadata.updatedAt}` : ''}
+`;
+
+        const readmePath = path.join(modpackPath, 'README.md');
+        await fs.writeFile(readmePath, readmeContent);
+    }
+
+    /**
+     * Download and install modpack from public URL
+     */
+    async installFromURL(modpackUrl, modpackId = null) {
+        try {
+            // Download modpack.json
+            const modpackData = await this.downloadJSON(modpackUrl);
+
+            const workspaceId = modpackId || modpackData.id || `modpack_${Date.now()}`;
+            const workDir = path.join(this.workspacePath, workspaceId);
+
+            if (fs.existsSync(workDir)) {
+                throw new Error(`Modpack '${workspaceId}' already exists`);
+            }
+
+            // Create workspace
+            this.createNewModpack(workspaceId, modpackData);
+
+            // Download all mods
+            const results = {
+                successful: 0,
+                failed: 0,
+                mods: []
+            };
+
+            for (const mod of modpackData.mods) {
+                try {
+                    if (mod.url) {
+                        await this.addModFromURL(workspaceId, mod.url);
+                        results.successful++;
+                        results.mods.push({ ...mod, status: 'success' });
+                    } else if (mod.curseForgeId && this.curseForgeAPI) {
+                        await this.addModFromCurseForge(workspaceId, mod.curseForgeId, modpackData.minecraftVersion);
+                        results.successful++;
+                        results.mods.push({ ...mod, status: 'success' });
+                    }
+                } catch (error) {
+                    results.failed++;
+                    results.mods.push({ ...mod, status: 'failed', error: error.message });
+                }
+            }
+
+            // Update metadata with source URL
+            await this.updateMetadata(workspaceId, {
+                sourceUrl: modpackUrl,
+                installedFrom: 'url'
+            });
+
+            return {
+                success: true,
+                workspaceId: workspaceId,
+                results: results
+            };
+
+        } catch (error) {
+            throw new Error(`Failed to install from URL: ${error.message}`);
+        }
+    }
+
+    /**
+     * Download JSON from URL
+     */
+    async downloadJSON(url) {
+        return new Promise((resolve, reject) => {
+            const protocol = url.startsWith('https') ? https : http;
+
+            const request = protocol.get(url, (response) => {
+                // Handle redirects
+                if (response.statusCode === 301 || response.statusCode === 302) {
+                    return this.downloadJSON(response.headers.location)
+                        .then(resolve)
+                        .catch(reject);
+                }
+
+                if (response.statusCode !== 200) {
+                    reject(new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`));
+                    return;
+                }
+
+                let data = '';
+                response.on('data', (chunk) => {
+                    data += chunk;
+                });
+
+                response.on('end', () => {
+                    try {
+                        const json = JSON.parse(data);
+                        resolve(json);
+                    } catch (error) {
+                        reject(new Error('Invalid JSON response'));
+                    }
+                });
+            });
+
+            request.on('error', (err) => {
+                reject(err);
+            });
+        });
+    }
+
+    /**
+     * Generate public modpack JSON for hosting
+     */
+    async generatePublicModpack(modpackId, options = {}) {
+        const workDir = path.join(this.workspacePath, modpackId);
+        const metadataPath = path.join(workDir, 'modpack.json');
+
+        if (!fs.existsSync(metadataPath)) {
+            throw new Error('Modpack metadata not found');
+        }
+
+        const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+
+        // Create public modpack JSON
+        const publicModpack = {
+            id: metadata.id,
+            name: metadata.name,
+            version: metadata.version,
+            minecraftVersion: metadata.minecraftVersion,
+            modloader: metadata.modloader,
+            author: metadata.author,
+            description: metadata.description,
+            requiredRam: metadata.requiredRam,
+            javaVersion: metadata.javaVersion,
+            createdAt: metadata.createdAt,
+            updatedAt: new Date().toISOString(),
+            mods: metadata.mods.map(mod => ({
+                filename: mod.filename,
+                url: mod.url || null,
+                curseForgeId: mod.curseForgeId || null,
+                hash: mod.hash,
+                version: mod.version,
+                required: mod.required !== false
+            })),
+            folders: metadata.folders,
+            votingUrl: options.votingUrl || metadata.votingUrl || null,
+            issuesUrl: options.issuesUrl || metadata.issuesUrl || null,
+            downloadUrl: options.downloadUrl || null,
+            votes: metadata.votes || {
+                totalDownloads: 0,
+                suggestedMods: []
+            }
+        };
+
+        // Save public JSON
+        const publicPath = path.join(workDir, 'modpack.public.json');
+        await fs.writeFile(publicPath, JSON.stringify(publicModpack, null, 2));
+
+        return {
+            success: true,
+            path: publicPath,
+            json: publicModpack
+        };
+    }
+
+    /**
+     * Add mod vote/suggestion
+     */
+    async addModSuggestion(modpackId, modInfo) {
+        const workDir = path.join(this.workspacePath, modpackId);
+        const metadataPath = path.join(workDir, 'modpack.json');
+
+        if (!fs.existsSync(metadataPath)) {
+            throw new Error('Modpack metadata not found');
+        }
+
+        const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+
+        if (!metadata.votes) {
+            metadata.votes = {
+                totalDownloads: 0,
+                suggestedMods: []
+            };
+        }
+
+        // Check if mod already suggested
+        const existing = metadata.votes.suggestedMods.find(
+            m => m.name.toLowerCase() === modInfo.name.toLowerCase() ||
+                 m.curseForgeId === modInfo.curseForgeId
+        );
+
+        if (existing) {
+            existing.votes++;
+            existing.lastVoted = new Date().toISOString();
+        } else {
+            metadata.votes.suggestedMods.push({
+                name: modInfo.name,
+                curseForgeId: modInfo.curseForgeId || null,
+                url: modInfo.url || null,
+                votes: 1,
+                suggestedBy: modInfo.suggestedBy || 'Anonymous',
+                suggestedAt: new Date().toISOString(),
+                lastVoted: new Date().toISOString()
+            });
+        }
+
+        // Sort by votes
+        metadata.votes.suggestedMods.sort((a, b) => b.votes - a.votes);
+
+        await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+
+        return {
+            success: true,
+            suggestions: metadata.votes.suggestedMods
         };
     }
 

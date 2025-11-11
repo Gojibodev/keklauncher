@@ -23,7 +23,10 @@
             <div class="sidebar">
                 <div class="sidebar-header">
                     <h3>[WORKSPACES]</h3>
-                    <button class="btn-new" onclick="showNewModpackModal()">+ NEW</button>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="btn-new" onclick="showNewModpackModal()">+ NEW</button>
+                        <button class="btn-new" onclick="showImportURLModal()">URL</button>
+                    </div>
                 </div>
                 <div id="workspacesList" class="workspaces-list">
                     <!-- Workspaces will be loaded here -->
@@ -120,9 +123,39 @@
                     <!-- Export Section -->
                     <div class="section export-section">
                         <h3>[EXPORT & MANAGE]</h3>
+                        <div class="export-options">
+                            <div class="export-group">
+                                <h4>Export to Launcher (AppData):</h4>
+                                <div class="action-buttons">
+                                    <button class="btn-success" onclick="exportModpack(false, 'appdata')">FOLDER</button>
+                                    <button class="btn-success" onclick="exportModpack(true, 'appdata')">ZIP</button>
+                                </div>
+                            </div>
+                            <div class="export-group">
+                                <h4>Export to Share (Documents):</h4>
+                                <div class="action-buttons">
+                                    <button class="btn-success" onclick="exportModpack(false, 'shareable')">FOLDER</button>
+                                    <button class="btn-success" onclick="exportModpack(true, 'shareable')">ZIP</button>
+                                    <button class="btn-secondary" onclick="openExportFolder('shareable')">OPEN FOLDER</button>
+                                </div>
+                            </div>
+                            <div class="export-group">
+                                <h4>Export to Project (Development):</h4>
+                                <div class="action-buttons">
+                                    <button class="btn-success" onclick="exportModpack(false, 'project')">FOLDER</button>
+                                    <button class="btn-success" onclick="exportModpack(true, 'project')">ZIP</button>
+                                    <button class="btn-secondary" onclick="openExportFolder('project')">OPEN FOLDER</button>
+                                </div>
+                            </div>
+                        </div>
+                        <hr style="border-color: #00d9ff; margin: 20px 0;">
+                        <div class="export-group">
+                            <h4>Generate Public Modpack:</h4>
+                            <p style="color: #888; font-size: 11px;">Generate a modpack.public.json file for hosting online (GitHub, Pastebin, etc.)</p>
+                            <button class="btn-primary" onclick="showPublicModpackModal()">GENERATE PUBLIC JSON</button>
+                        </div>
+                        <hr style="border-color: #00d9ff; margin: 20px 0;">
                         <div class="action-buttons-wide">
-                            <button class="btn-success" onclick="exportModpack(false)">EXPORT AS FOLDER</button>
-                            <button class="btn-success" onclick="exportModpack(true)">EXPORT AS ZIP</button>
                             <button class="btn-secondary" onclick="openWorkspaceFolder()">OPEN WORKSPACE</button>
                             <button class="btn-danger" onclick="deleteWorkspace()">DELETE WORKSPACE</button>
                         </div>
@@ -257,6 +290,55 @@
                 <button class="btn-primary" onclick="addFolder()">ADD FOLDER</button>
                 <button class="btn-secondary" onclick="closeModal('addFolderModal')">CANCEL</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal: Import from URL -->
+    <div id="importURLModal" class="modal">
+        <div class="modal-content large">
+            <h3>[IMPORT MODPACK FROM URL]</h3>
+            <p style="color: #00d9ff;">Install a public modpack from a URL (modpack.json or modpack.public.json)</p>
+            <div class="input-group">
+                <label>MODPACK URL:</label>
+                <input type="text" id="modpackUrl" class="input-field" placeholder="https://example.com/modpack.json" />
+            </div>
+            <div class="input-group">
+                <label>WORKSPACE ID (optional):</label>
+                <input type="text" id="urlModpackId" class="input-field" placeholder="Auto-detected from modpack" />
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="importFromURL()">DOWNLOAD & INSTALL</button>
+                <button class="btn-secondary" onclick="closeModal('importURLModal')">CANCEL</button>
+            </div>
+            <div id="urlImportProgress" class="progress-info" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Generate Public Modpack -->
+    <div id="publicModpackModal" class="modal">
+        <div class="modal-content large">
+            <h3>[GENERATE PUBLIC MODPACK]</h3>
+            <p style="color: #00d9ff;">Create a shareable modpack.public.json file for hosting online</p>
+            <div class="input-group">
+                <label>VOTING URL (optional):</label>
+                <input type="text" id="votingUrl" class="input-field" placeholder="https://github.com/user/repo/issues" />
+                <small style="color: #888;">Where users can suggest/vote for mods</small>
+            </div>
+            <div class="input-group">
+                <label>ISSUES URL (optional):</label>
+                <input type="text" id="issuesUrl" class="input-field" placeholder="https://github.com/user/repo/issues" />
+                <small style="color: #888;">Where users can report bugs</small>
+            </div>
+            <div class="input-group">
+                <label>DOWNLOAD URL (optional):</label>
+                <input type="text" id="downloadUrl" class="input-field" placeholder="https://example.com/modpack.zip" />
+                <small style="color: #888;">Direct ZIP download link</small>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-primary" onclick="generatePublicModpack()">GENERATE JSON</button>
+                <button class="btn-secondary" onclick="closeModal('publicModpackModal')">CANCEL</button>
+            </div>
+            <div id="publicGenerated" class="progress-info" style="display: none;"></div>
         </div>
     </div>
 

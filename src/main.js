@@ -494,6 +494,88 @@ function createWindow() {
             return { success: false, error: error.message };
         }
     });
+
+    ipcMain.handle('creator-export-shareable', async (event, modpackId, exportAsZip) => {
+        try {
+            const result = await modpackCreator.exportToShareable(modpackId, exportAsZip);
+            return result;
+        } catch (error) {
+            console.error('Error exporting to shareable location:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-export-project', async (event, modpackId, exportAsZip) => {
+        try {
+            const result = await modpackCreator.exportToProjectRoot(modpackId, exportAsZip);
+            return result;
+        } catch (error) {
+            console.error('Error exporting to project root:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-load-to-workspace', async (event, modpackPath, newWorkspaceId) => {
+        try {
+            const result = await modpackCreator.loadModpackToWorkspace(modpackPath, newWorkspaceId);
+            return result;
+        } catch (error) {
+            console.error('Error loading modpack to workspace:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-open-export-folder', async (event, folderType) => {
+        try {
+            let folderPath;
+            if (folderType === 'shareable') {
+                folderPath = path.join(app.getPath('documents'), 'KEK Modpacks');
+            } else if (folderType === 'appdata') {
+                folderPath = modpackCreator.modpacksPath;
+            } else if (folderType === 'project') {
+                const projectRoot = path.join(app.getAppPath(), '..');
+                folderPath = path.join(projectRoot, 'modpacks');
+            }
+            if (folderPath) {
+                shell.openPath(folderPath);
+                return { success: true, path: folderPath };
+            }
+            return { success: false, error: 'Invalid folder type' };
+        } catch (error) {
+            console.error('Error opening export folder:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-install-from-url', async (event, modpackUrl, modpackId) => {
+        try {
+            const result = await modpackCreator.installFromURL(modpackUrl, modpackId);
+            return result;
+        } catch (error) {
+            console.error('Error installing from URL:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-generate-public', async (event, modpackId, options) => {
+        try {
+            const result = await modpackCreator.generatePublicModpack(modpackId, options);
+            return result;
+        } catch (error) {
+            console.error('Error generating public modpack:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('creator-suggest-mod', async (event, modpackId, modInfo) => {
+        try {
+            const result = await modpackCreator.addModSuggestion(modpackId, modInfo);
+            return result;
+        } catch (error) {
+            console.error('Error adding mod suggestion:', error);
+            return { success: false, error: error.message };
+        }
+    });
 }
 
 app.whenReady().then(() => {
