@@ -1,0 +1,23 @@
+{
+  "id": "piss-and-horror",
+  "name": "Piss and Horror (lil technic)",
+  "version": "1.0.0",
+  "description": "A horror-themed modpack with technical mods",
+  "minecraftVersion": "1.19.2",
+  "author": "Gojibodev",
+  "mods": [
+    {
+      "filename": "example-mod-v1.0.jar",
+      "url": "https://example.com/mods/example-mod-v1.0.jar",
+      "hash": "d41d8cd98f00b204e9800998ecf8427e",
+      "version": "1.0",
+      "required": true,
+      "description": "Example mod for demonstration"
+    }
+  ],
+  "installPath": "mods/piss-and-horror",
+  "settings": {
+    "installOnlyNew": true,
+    "downloadShaders": false
+  }
+}

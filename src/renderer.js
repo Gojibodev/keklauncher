@@ -140,4 +140,198 @@ document.addEventListener('DOMContentLoaded', () => {
             statusMessage.textContent = '';
         }, 5000);
     });
+
+    // ============ MODPACK MANAGEMENT ============
+
+    let currentModpackId = null;
+    const modpackList = document.getElementById('modpack-list');
+    const modpackDesc = document.getElementById('modpack-desc');
+
+    // Load modpacks on startup
+    async function loadModpacks() {
+        try {
+            const result = await window.electron.getModpacks();
+
+            if (result.success && result.modpacks.length > 0) {
+                modpackList.innerHTML = '';
+
+                result.modpacks.forEach(modpack => {
+                    const li = document.createElement('li');
+                    li.textContent = modpack.name;
+                    li.dataset.modpackId = modpack.id;
+                    li.addEventListener('click', () => selectModpack(modpack.id));
+                    modpackList.appendChild(li);
+                });
+
+                // Select first modpack by default
+                selectModpack(result.modpacks[0].id);
+            }
+        } catch (error) {
+            console.error('Error loading modpacks:', error);
+            statusMessage.textContent = 'Error loading modpacks';
+            statusMessage.className = 'status-message error';
+        }
+    }
+
+    // Select a modpack
+    async function selectModpack(modpackId) {
+        try {
+            currentModpackId = modpackId;
+
+            // Update UI selection
+            document.querySelectorAll('#modpack-list li').forEach(li => {
+                li.classList.remove('selected');
+                if (li.dataset.modpackId === modpackId) {
+                    li.classList.add('selected');
+                }
+            });
+
+            // Load modpack details
+            const result = await window.electron.loadModpack(modpackId);
+
+            if (result.success) {
+                const modpack = result.modpack;
+
+                // Update description
+                const descH2 = modpackDesc.querySelector('h2');
+                const descP = modpackDesc.querySelector('p');
+
+                if (descH2) descH2.textContent = modpack.name;
+                if (descP) {
+                    descP.textContent = `${modpack.description}\nMinecraft ${modpack.minecraftVersion} | Version ${modpack.version}`;
+                }
+
+                // Get stats
+                await updateModpackStats(modpackId);
+            }
+        } catch (error) {
+            console.error('Error selecting modpack:', error);
+            statusMessage.textContent = 'Error loading modpack';
+            statusMessage.className = 'status-message error';
+        }
+    }
+
+    // Update modpack statistics
+    async function updateModpackStats(modpackId) {
+        try {
+            const statsResult = await window.electron.getModpackStats(modpackId);
+            const compResult = await window.electron.compareMods(modpackId);
+
+            if (statsResult.success && compResult.success) {
+                const stats = statsResult.stats;
+                const comparison = compResult.comparison;
+
+                let statusText = `Mods: ${stats.totalMods} installed`;
+
+                if (stats.missing > 0) {
+                    statusText += ` | ${stats.missing} missing`;
+                }
+                if (stats.outdated > 0) {
+                    statusText += ` | ${stats.outdated} outdated`;
+                }
+                if (stats.extra > 0) {
+                    statusText += ` | ${stats.extra} extra`;
+                }
+
+                // Show in status message
+                if (stats.missing > 0 || stats.outdated > 0) {
+                    statusMessage.textContent = `[WARNING] ${statusText}`;
+                    statusMessage.className = 'status-message info';
+                } else if (stats.totalMods === 0) {
+                    statusMessage.textContent = '[INFO] No mods installed. Click "Update Modpack" to download';
+                    statusMessage.className = 'status-message info';
+                } else {
+                    statusMessage.textContent = `[OK] ${statusText} - Up to date!`;
+                    statusMessage.className = 'status-message success';
+                }
+            }
+        } catch (error) {
+            console.error('Error updating stats:', error);
+        }
+    }
+
+    // Update modpack button - now handles mod downloads
+    updateButton.removeEventListener('click', updateButton.onclick);
+    updateButton.addEventListener('click', async () => {
+        if (!currentModpackId) {
+            statusMessage.textContent = '[ERROR] No modpack selected';
+            statusMessage.className = 'status-message error';
+            return;
+        }
+
+        if (updateDownloaded) {
+            statusMessage.textContent = 'Installing update and restarting...';
+            ipcRenderer.send('install-update');
+            return;
+        }
+
+        // Check settings
+        const installOnlyNew = document.getElementById('install-onlynew').checked;
+
+        try {
+            statusMessage.textContent = `[INFO] Downloading mods for ${currentModpackId}...`;
+            statusMessage.className = 'status-message info';
+            updateButton.disabled = true;
+
+            const result = await window.electron.downloadMods(currentModpackId, installOnlyNew);
+
+            if (result.success) {
+                const { successful, failed, skipped } = result.results;
+
+                let message = `[OK] Download complete! `;
+                message += `${successful.length} successful`;
+
+                if (skipped.length > 0) {
+                    message += `, ${skipped.length} skipped`;
+                }
+                if (failed.length > 0) {
+                    message += `, ${failed.length} failed`;
+                }
+
+                statusMessage.textContent = message;
+                statusMessage.className = failed.length > 0 ? 'status-message error' : 'status-message success';
+
+                // Update stats
+                await updateModpackStats(currentModpackId);
+            } else {
+                statusMessage.textContent = `[ERROR] ${result.error}`;
+                statusMessage.className = 'status-message error';
+            }
+
+            updateButton.disabled = false;
+        } catch (error) {
+            console.error('Error downloading mods:', error);
+            statusMessage.textContent = `[ERROR] ${error.message}`;
+            statusMessage.className = 'status-message error';
+            updateButton.disabled = false;
+        }
+    });
+
+    // Browse local files button
+    const browseButton = document.getElementById('browse-local-files-button');
+    if (browseButton) {
+        browseButton.addEventListener('click', async () => {
+            if (currentModpackId) {
+                await window.electron.openModpackFolder(currentModpackId);
+            }
+        });
+    }
+
+    // Listen for download progress events
+    window.electron.onModDownloadProgress((data) => {
+        const { filename, downloaded, total, percent } = data;
+        const downloadedMB = (downloaded / 1024 / 1024).toFixed(2);
+        const totalMB = (total / 1024 / 1024).toFixed(2);
+
+        statusMessage.textContent = `[INFO] Downloading ${filename}: ${percent.toFixed(1)}% (${downloadedMB}MB / ${totalMB}MB)`;
+        statusMessage.className = 'status-message info';
+    });
+
+    window.electron.onModDownloadOverall((data) => {
+        const { completed, total, percent } = data;
+        console.log(`Overall progress: ${completed}/${total} (${percent.toFixed(1)}%)`);
+    });
+
+    // Initialize modpacks
+    loadModpacks();
 });
